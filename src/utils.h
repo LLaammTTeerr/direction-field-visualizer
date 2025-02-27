@@ -29,6 +29,8 @@ private:
         else if (token == "tan") stack.push(tan(b));
         else if (token == "cot") stack.push(1.0f/tan(b));
         else if (token == "ln") stack.push(log(b));
+        else if (token == "sqrt") stack.push(sqrt(b));
+        else if (token == "abs") stack.push(fabs(b));
         else if (token == "e^") stack.push(exp(b));
         else {
           float a = stack.top(); stack.pop();

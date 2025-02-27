@@ -21,8 +21,13 @@ const float SCALE = 20.0f;
 
 char CURRENT_FUNCTION_TEXT[128] = "x + y";
 char NEW_FUNCTION_TEXT[128] = "x + y";
+char TRACE_X_TEXT[128] = "0";
+char TRACE_Y_TEXT[128] = "0";
 
 ExpressionParser parser;
+
+float traceX = 0.0f;
+float traceY = 0.0f;
 
 float f(float x, float y) {
   return parser.Evaluate(CURRENT_FUNCTION_TEXT, x, y);
@@ -80,13 +85,50 @@ void DrawGrid(void) {
   DrawLineEx(yAxis1, yAxis2, 2.0f, BLACK);
 }
 
-void DrawMenu(void) {
-  DrawRectangle(0, SCREEN_HEIGHT - MENU_HEIGHT, SCREEN_WIDTH, MENU_HEIGHT, GRAY);
-  if (GuiTextBox({10, SCREEN_HEIGHT - MENU_HEIGHT + 15, 500, 70}, NEW_FUNCTION_TEXT, 128, true)) {
-    
+const float TRACE_SPEED = 0.05;
+
+void DrawTrace(float x, float y, float d) {
+  while (MIN_X <= x and x <= MAX_X && MIN_Y <= y and y <= MAX_Y) {
+    Vector2 dir = Vector2Scale(Vector2Normalize({1.0f, f(x, y)}), d);
+    Vector2 from = DecartesToView(x, y);
+    Vector2 to = DecartesToView(x + dir.x, y + dir.y);
+    DrawLineEx(from, to, 3.0f, RED);
+    x += dir.x;
+    y += dir.y;
   }
+}
+
+void DrawTrace(float x, float y) {
+  DrawTrace(x, y, +TRACE_SPEED);
+  DrawTrace(x, y, -TRACE_SPEED);
+}
+
+void DrawMenu(void) {
+  static bool functionEditing = false;
+  static bool traceXEditing = false;
+  static bool traceYEditing = false;
+
+  DrawRectangle(0, SCREEN_HEIGHT - MENU_HEIGHT, SCREEN_WIDTH, MENU_HEIGHT, GRAY);
+  
+  if (GuiTextBox({10, SCREEN_HEIGHT - MENU_HEIGHT + 15, 500, 70}, NEW_FUNCTION_TEXT, 128, functionEditing)) {
+    functionEditing = !functionEditing;
+  }
+  
   if (GuiButton({500 + 25, SCREEN_HEIGHT - MENU_HEIGHT + 15, 100, 70}, "DRAW")) {
     strcpy(CURRENT_FUNCTION_TEXT, NEW_FUNCTION_TEXT);
+  }
+  
+  if (GuiTextBox({650, SCREEN_HEIGHT - MENU_HEIGHT + 15, 100, 70}, TRACE_X_TEXT, 128, traceXEditing)) {
+    traceXEditing = !traceXEditing;
+  }
+  
+  if (GuiTextBox({775, SCREEN_HEIGHT - MENU_HEIGHT + 15, 100, 70}, TRACE_Y_TEXT, 128, traceYEditing)) {
+    traceYEditing = !traceYEditing;
+  }
+  
+  if (GuiButton({900, SCREEN_HEIGHT - MENU_HEIGHT + 15, 100, 70}, "TRACE")) {
+    traceX = strtof(TRACE_X_TEXT, nullptr);
+    traceY = strtof(TRACE_Y_TEXT, nullptr);
   }
 }
 
@@ -104,10 +146,11 @@ int main() {
     for (float x = MIN_X; x <= MAX_X; x += STEP) {
       for (float y = MIN_Y; y <= MAX_Y; y += STEP) {
         Vector2 pos = DecartesToView(x, y);
-        Vector2 dir = Vector2Scale(Vector2Normalize({1.0f, f(x, y)}), SCALE);
+        Vector2 dir = Vector2Scale(Vector2Normalize({1.0f, -f(x, y)}), SCALE);
         DrawArrow(pos, Vector2Add(pos, dir), 2.0f, BLUE);
       }
     }
+    DrawTrace(traceX, traceY);
     EndDrawing();
   }
 
